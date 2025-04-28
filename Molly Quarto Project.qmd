@@ -1,0 +1,183 @@
+---
+title: "Growing Trends in Oral Rehydration"
+author: "Molly Quinn"
+format:
+  html:
+    embed-resources: true
+    code-fold: true
+    toc: true
+    theme: cosmo
+---
+
+## Introduction
+
+**Oral Re-hydration Salts (ORS)** represent a critical, low-cost intervention for the treatment of dehydration caused by diarrhea diseases — one of the leading causes of mortality among children under five years old globally. Despite their proven effectiveness, access to and utilization of ORS remain uneven across regions and countries.
+
+Understanding the global distribution and historical trends of ORS usage is vital for shaping effective public health strategies, especially in low- and middle-income countries where the burden of diarrhoeal diseases remains highest.\
+This report provides an in-depth analysis of ORS usage patterns between 2000 and 2023, focusing on geographical disparities, gender-based differences, and temporal trends. Through various visualizations, we aim to uncover critical insights that could guide future interventions and policy formulations.
+
+The analysis includes:
+
+-   A **World Map** showing the global distribution of ORS usage in 2023.
+-   A **Bar Chart** highlighting top-performing countries.
+-   A **Bar chart** examining gender disparities in distribution of ORS usage in 2023.
+-   A **Time-Series** illustrating changes in global average ORS usage over time.
+
+Our goal is to emphasize the importance of continuous global health efforts to expand the accessibility and promotion of ORS therapy worldwide.
+
+```{r}
+#| label: setup
+#| include: false
+# Load libraries
+library(tidyverse)
+library(maps)
+library(ggplot2)
+
+
+```
+
+```{r}
+# Load data
+data <- read.csv("unicef_indicator_1.csv")
+
+# Filter for 2023
+data_2023 <- data %>%
+  filter(time_period == 2023, sex %in% c("Male", "Female"))
+
+```
+
+### 1. Gender Disparity in ORS Usage 2023
+
+```{r}
+
+# Plot
+ggplot(data_2023, aes(x = obs_value, y = country, fill = sex)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(values = c("Female" = "purple", "Male" = "darkblue")) +
+  labs(title = "Gender Disparity in ORS Usage 2023",
+       x = "ORS Usage (%)",
+       y = "Country") +
+  theme_minimal() +
+  theme(
+  panel.grid.major = element_blank(),  # removes major gridlines
+  panel.grid.minor = element_blank()   # removes minor gridlines
+)
+```
+
+This bar chart compares the average ORS usage between males and females globally in 2023. The results show that both genders have very similar ORS usage rates, with only a slight, statistically insignificant difference.\
+This suggests that, on a global scale, gender is not a major determinant in access to life-saving treatments like ORS, reflecting commendable efforts by health initiatives to treat boys and girls equally. Nonetheless, it remains crucial for healthcare programs to continue monitoring gender equity at national and regional levels, as disparities can still exist in specific local contexts even when global averages seem balanced.
+
+### 2. Worldwide: ORS Usage in Specific Countries 2023
+
+```{r}
+# Use built-in map data
+world_map <- map_data("world")
+
+# Filter for 2023 data
+data_2023_total <- data %>%
+  filter(time_period == 2023, sex == "Total")
+
+# Merge map and your data
+map_data_combined <- left_join(world_map, data_2023_total, by = c("region" = "country"))
+
+# Plot
+ggplot(map_data_combined, aes(x = long, y = lat, group = group, fill = obs_value)) +
+  geom_polygon(color = "white") +
+  scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
+  labs(title = "Worldwide: ORS Usage in Specific Countries 2023",
+       fill = "ORS Usage (%)") +
+  theme_minimal() +
+  theme(
+  panel.grid.major = element_blank(),  # removes major gridlines
+  panel.grid.minor = element_blank()   # removes minor gridlines
+)
+
+```
+
+The world map visualization reveals significant geographical inequalities in ORS usage rates across the globe. While some countries, particularly in parts of Africa and South Asia, demonstrate high adoption rates of ORS therapy, many regions exhibit alarmingly low coverage. In particular, Sub-Saharan Africa continues to show a mix of progress and stagnation, suggesting that economic, infrastructural, and educational barriers still heavily impact health outcomes. Regions with lower ORS usage rates are often those most affected by diarrhoeal diseases, highlighting a serious mismatch between health needs and intervention availability.
+
+### 3. Global Trend of ORS Usage
+
+```{r}
+# Summarize yearly average
+global_trend <- data %>%
+  filter(sex == "Total") %>%
+  group_by(time_period) %>%
+  summarize(avg_ors_usage = mean(obs_value, na.rm = TRUE))
+
+# Plot
+ggplot(global_trend, aes(x = time_period, y = avg_ors_usage)) +
+  geom_line(color = "darkblue") +
+  geom_point(color = "darkblue") +
+  labs(title = "Global Trend of ORS Usage (2000–2023)",
+       x = "Year",
+       y = "Average ORS Usage (%)") +
+  theme_minimal() +
+  theme(
+  panel.grid.major = element_blank(),  # removes major gridlines
+  panel.grid.minor = element_blank()   # removes minor gridlines
+)
+
+```
+
+The time-series chart displays a positive trend of increasing ORS usage globally from 2000 until about 2015, followed by a period of stagnation and minor decline up to 2023. This plateau may reflect complacency, shifting health priorities, or insufficient follow-up efforts after initial program successes. Such trends are concerning because diarrhoeal diseases continue to pose a significant health threat, particularly in impoverished communities. The slight downturn in recent years underscores the urgent need for renewed global health focus and funding.
+
+### 4. Top 5 Countries for ORS Usage 2023
+
+```{r}
+# Get top 5
+top5_countries <- data %>%
+  filter(time_period == 2023, sex == "Total") %>%
+  group_by(country) %>%
+  summarize(avg_obs_value = mean(obs_value, na.rm = TRUE)) %>%
+  arrange(desc(avg_obs_value)) %>%
+  slice(1:5)
+
+# Plot
+ggplot(top5_countries, aes(x = reorder(country, avg_obs_value), y = avg_obs_value)) +
+  geom_bar(stat = "identity", fill = "navy") +
+  coord_flip() +
+  labs(title = "Top 5 Countries for ORS Usage 2023",
+       x = "Country",
+       y = "Average ORS Usage (%)") +
+  theme_minimal() +
+  theme(
+  panel.grid.major = element_blank(),  # removes major gridlines
+  panel.grid.minor = element_blank()   # removes minor gridlines
+)
+
+```
+
+This bar chart focuses on the top 5 countries with the highest recorded ORS usage in 2023: Mozambique, Jordan, Afghanistan, Senegal, and Yemen. These countries have succeeded in implementing effective public health campaigns, community-based health initiatives, and awareness programs promoting the use of ORS therapy. It is noteworthy that some of these countries, despite facing significant political and economic challenges (e.g., Afghanistan and Yemen), have managed to prioritize public health interventions for children. This underlines the fact that strong public health leadership and international partnerships can yield remarkable results even in unstable contexts.
+
+## Conclusion
+
+The analysis highlights critical aspects of global ORS usage:
+
+-   Steady global improvements were made between 2000 and 2015, but recent stagnation indicates potential setbacks.
+
+-   Regional disparities are stark, particularly between higher-income and lower-income countries.
+
+-   Gender-based access appears relatively equitable overall, a positive sign for child healthcare equity.
+
+-   Top-performing countries demonstrate that strong public health strategies can overcome substantial socio-economic and political obstacles.
+
+This study reinforces that while global progress has been made, continued and expanded efforts are essential to achieve universal coverage of lifesaving ORS therapy.
+
+## Recommendations
+
+Based on the findings, the following actions are recommended:
+
+-   Expand outreach and educational programs in countries and regions with low ORS usage rates.
+
+-   Invest in healthcare infrastructure to ensure that ORS is available at all primary healthcare centers, particularly in rural and undeserved areas.
+
+-   Strengthen monitoring systems to track ORS usage trends and detect early signs of decline.
+
+-   Involve communities through culturally sensitive campaigns that target caregivers, especially mothers.
+
+-   Foster global partnerships between governments, NGOs, and international health agencies to maintain momentum toward eliminating preventable child deaths caused by diarrhea.
+
+-   Prioritize equity by ensuring that marginalized groups, including remote rural populations and conflict-affected areas, have access to essential health treatments like ORS.
+
+If these strategies are pursued effectively, the world can move closer to Sustainable Development Goal 3; ensuring healthy lives and promoting well-being for all at all ages.
